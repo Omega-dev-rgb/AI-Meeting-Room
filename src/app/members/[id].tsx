@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, Text } from 'react-native';
-import { VENDOR_LABEL } from '../../core/defaultMembers';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { MODEL_PRESETS, presetOf, VENDOR_LABEL } from '../../core/defaultMembers';
 import { useApp } from '../../state/AppState';
 import { Field } from '../../ui/Field';
 import { useTheme } from '../../ui/theme';
@@ -35,6 +35,38 @@ export default function MemberEditScreen() {
         placeholder="既存のチャットで「これまでの会話を要約して」と頼んだ結果を貼り付けると、話を引き継げます"
         hint="長いほど1回あたりの料金が上がります"
       />
+      <View style={{ gap: 6 }}>
+        <Text style={{ color: t.text, fontSize: 14, fontWeight: '600' }}>モデル</Text>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          {(
+            [
+              ['casual', '普段用（安い）'],
+              ['serious', '本気用（賢い・高い）'],
+            ] as const
+          ).map(([kind, label]) => {
+            const on = presetOf(draft) === kind;
+            return (
+              <Pressable
+                key={kind}
+                onPress={() => setDraft({ ...draft, model: MODEL_PRESETS[draft.vendor][kind] })}
+                style={{
+                  flex: 1,
+                  padding: 10,
+                  borderRadius: 10,
+                  borderWidth: 1.5,
+                  borderColor: on ? t.accent : t.border,
+                  backgroundColor: t.card,
+                  alignItems: 'center',
+                }}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: on }}
+              >
+                <Text style={{ color: on ? t.accent : t.text, fontWeight: on ? '700' : '400' }}>{label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
       <Field
         label="モデルID（OpenRouter）"
         value={draft.model}

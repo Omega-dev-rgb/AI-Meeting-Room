@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { VENDOR_LABEL } from '../../core/defaultMembers';
+import { presetOf, VENDOR_LABEL } from '../../core/defaultMembers';
 import { useApp } from '../../state/AppState';
 import { confirmDestructive } from '../../ui/confirm';
 import { useTheme, VENDOR_COLOR, VENDOR_ICON } from '../../ui/theme';
@@ -29,6 +29,9 @@ export default function MembersScreen() {
             </Text>
             <Text style={{ color: t.sub, fontSize: 13 }} numberOfLines={2}>
               {m.role}
+            </Text>
+            <Text style={{ color: t.sub, fontSize: 11 }}>
+              {{ casual: '普段用モデル', serious: '本気用モデル', custom: 'カスタムモデル' }[presetOf(m)]}・{m.model}
             </Text>
           </View>
         </Pressable>
