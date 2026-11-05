@@ -1,0 +1,38 @@
+# main が更新されるたびに EAS Update へ配信し、iPhone の Expo Go で最新版を開けるようにする
+name: EAS Update
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: eas-update
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skip until EAS is configured
+        id: gate
+        run: |
+          if grep -q '"projectId"' app.json; then echo "ready=true" >> "$GITHUB_OUTPUT"; else echo "app.json に projectId がないため配信をスキップ"; fi
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.gate.outputs.ready == 'true'
+        run: npm ci
+      - name: Publish update
+        if: steps.gate.outputs.ready == 'true'
+        run: npx --yes eas-cli@27.4.1 update --branch main --message "$(git log -1 --pretty=%s)" --platform all --non-interactive
+      - name: Summary
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          echo "### iPhoneで開く" >> "$GITHUB_STEP_SUMMARY"
+          echo "https://expo.dev/accounts/omega-dev-rgb/projects/ai-meeting-room/updates を開き、最新の更新の「Preview」のQRコードをiPhoneのカメラで読み取ると Expo Go で開きます。" >> "$GITHUB_STEP_SUMMARY"
