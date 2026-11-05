@@ -1,24 +1,16 @@
 import { router } from 'expo-router';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { VENDOR_LABEL } from '../../core/defaultMembers';
 import { useApp } from '../../state/AppState';
+import { confirmDestructive } from '../../ui/confirm';
 import { useTheme, VENDOR_COLOR, VENDOR_ICON } from '../../ui/theme';
 
 export default function MembersScreen() {
   const t = useTheme();
   const { data, resetMembers } = useApp();
 
-  const confirmReset = () => {
-    const msg = 'キャラ設定を初期値に戻します。記憶メモも消えます。';
-    if (Platform.OS === 'web') {
-      if (globalThis.confirm?.(msg)) resetMembers();
-      return;
-    }
-    Alert.alert('初期値に戻す', msg, [
-      { text: 'キャンセル', style: 'cancel' },
-      { text: '戻す', style: 'destructive', onPress: resetMembers },
-    ]);
-  };
+  const confirmReset = () =>
+    confirmDestructive('初期値に戻す', 'キャラ設定を初期値に戻します。記憶メモも消えます。', '戻す', resetMembers);
 
   return (
     <ScrollView style={{ backgroundColor: t.bg }} contentContainerStyle={{ padding: 16, gap: 12 }}>
