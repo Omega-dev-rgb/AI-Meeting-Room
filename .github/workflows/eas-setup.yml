@@ -1,0 +1,34 @@
+# 1回だけ手動で動かす：Expo上にプロジェクトを作り、EAS Update の設定を app.json に書き込んでブランチに push する
+name: EAS setup (one-time)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Create Expo project and link it
+        run: npx --yes eas-cli@27.4.1 init --non-interactive --force
+      - name: Configure EAS Update
+        run: npx --yes eas-cli@27.4.1 update:configure --platform all --non-interactive
+      - name: Push config to a branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b chore/eas-config
+          git add -A
+          git commit -m "EAS Update の設定を追加（eas init / update:configure）"
+          git push -u origin chore/eas-config
+          git diff HEAD~1 --stat
