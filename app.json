@@ -27,6 +27,23 @@
     "plugins": [
       "expo-router",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "6b00c09c-70a5-4ab5-9981-3f7b0891e8e6"
+      }
+    },
+    "owner": "omega-dev-rgb",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6b00c09c-70a5-4ab5-9981-3f7b0891e8e6"
+    }
   }
 }
