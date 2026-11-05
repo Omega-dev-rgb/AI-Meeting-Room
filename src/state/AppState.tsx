@@ -28,6 +28,7 @@ type AppState = {
   spentThisMonth: number;
   budget: BudgetStatus;
   createRoom(title: string, memberIds: string[]): string;
+  renameRoom(id: string, title: string): void;
   deleteRoom(id: string): void;
   updateMember(m: Member): void;
   resetMembers(): void;
@@ -151,6 +152,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       const id = newId();
       update((d) => ({ ...d, rooms: [{ id, title, memberIds, createdAt: new Date().toISOString() }, ...d.rooms] }));
       return id;
+    },
+    renameRoom(id, title) {
+      update((d) => ({ ...d, rooms: d.rooms.map((r) => (r.id === id ? { ...r, title } : r)) }));
     },
     deleteRoom(id) {
       update((d) => ({ ...d, rooms: d.rooms.filter((r) => r.id !== id), messages: d.messages.filter((m) => m.roomId !== id) }));
