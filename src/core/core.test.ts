@@ -103,6 +103,13 @@ describe('runConversation', () => {
     expect(out[3].text).toContain('（モック）');
   });
 
+  it('モックは2周しても同じ人が同じ文を繰り返さない', async () => {
+    const out: Message[] = [];
+    for await (const m of runConversation(room, 'テーマ', [msg({ text: 'テーマ' })], [], deps(createMockProvider(0)))) out.push(m);
+    expect(out).toHaveLength(8);
+    for (let i = 0; i < 4; i++) expect(out[i].text).not.toBe(out[i + 4].text);
+  });
+
   it('予算超過なら発言せず停止の通知を出す', async () => {
     const spentMsg = msg({ usage: { inputTokens: 0, outputTokens: 0, costUsd: 100 }, createdAt: '2026-11-02T00:00:00Z' });
     const out: Message[] = [];

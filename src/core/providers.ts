@@ -60,18 +60,22 @@ const MOCK_LINES: Record<string, string[]> = {
   chatgpt: [
     'みんなの意見、いい感じに出てきたね。いったん論点を整理すると「何を先に作るか」が鍵かな。',
     'なるほど、その気持ちわかるよ。じゃあ次は優先順位を一緒に決めようか。',
+    'ここまでをまとめると、まず小さく試してみる方向で合意できそうだね。',
   ],
   claude: [
     '一点だけ気になったのですが、その前提は確認済みでしょうか。小さく試してからでも遅くないと思います。',
     '良い案だと思います。念のため、費用と時間の見積もりも添えておくと安心ですね。',
+    'ジェミさんの案、楽しそうですね。続けられる仕組みも一緒に考えておきましょう。',
   ],
   gemini: [
     'それめっちゃ面白い！ついでにキャラごとにスタンプ作っちゃうのはどう！？',
     'わかる〜！その案に乗っかって、毎朝の朝会もやっちゃおうよ！',
+    'グロックはそう言うけど、やってみたら絶対楽しいって！',
   ],
   grok: [
     '正直に言うと、その計画はちょっと楽観的すぎ。締め切りを先に決めないと永遠に終わらないよ。',
     'はいはい盛り上がってるところ悪いけど、それ本当に毎日使う？',
+    'まあ、締め切りを決めるならやってもいいんじゃない。',
   ],
 };
 
@@ -80,7 +84,8 @@ const MOCK_LINES: Record<string, string[]> = {
  * どのメンバーとして呼ばれたかは system プロンプト中の「中身は◯◯」から判定する。
  */
 export function createMockProvider(delayMs = 400): ChatProvider {
-  let n = 0;
+  // メンバーごとに数えて、同じ人が同じ文を繰り返さないようにする
+  const counts: Record<string, number> = {};
   return {
     async complete(req: CompletionRequest, signal?: AbortSignal): Promise<CompletionResult> {
       await new Promise<void>((resolve, reject) => {
@@ -98,8 +103,11 @@ export function createMockProvider(delayMs = 400): ChatProvider {
         const vendor = (['chatgpt', 'claude', 'gemini', 'grok'] as const).find((v) =>
           sys.includes(`中身は${{ chatgpt: 'ChatGPT', claude: 'Claude', gemini: 'Gemini', grok: 'Grok' }[v]}`),
         );
-        const lines = MOCK_LINES[vendor ?? 'chatgpt'];
-        text = lines[n++ % lines.length] + '（モック）';
+        const key = vendor ?? 'chatgpt';
+        const lines = MOCK_LINES[key];
+        const i = counts[key] ?? 0;
+        counts[key] = i + 1;
+        text = lines[i % lines.length] + '（モック）';
       }
       return { text, usage: { inputTokens: 0, outputTokens: 0, costUsd: 0 } };
     },
