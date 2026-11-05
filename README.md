@@ -26,3 +26,9 @@ npm run typecheck && npm test && npm run export:web
 ```
 
 この開発はAIエージェントが自走する「ループエンジニアリング」の実験です。ルールは [docs/loop-rules.md](docs/loop-rules.md)、記録は [docs/experiment-log.md](docs/experiment-log.md)。
+
+## iPhoneで開く（Expo Go）
+
+iPhone の Safari で次のURLを開くと、Expo Go で常に最新版が起動します（main が更新されるたびに自動配信）。
+
+`exp://u.expo.dev/6b00c09c-70a5-4ab5-9981-3f7b0891e8e6?channel-name=main&runtime-version=1.0.0`
