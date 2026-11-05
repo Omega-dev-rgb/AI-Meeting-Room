@@ -30,9 +30,20 @@ jobs:
         run: npm ci
       - name: Publish update
         if: steps.gate.outputs.ready == 'true'
-        run: npx --yes eas-cli@27.4.1 update --branch main --message "$(git log -1 --pretty=%s)" --platform all --non-interactive
-      - name: Summary
-        if: steps.gate.outputs.ready == 'true'
         run: |
-          echo "### iPhoneで開く" >> "$GITHUB_STEP_SUMMARY"
-          echo "https://expo.dev/accounts/omega-dev-rgb/projects/ai-meeting-room/updates を開き、最新の更新の「Preview」のQRコードをiPhoneのカメラで読み取ると Expo Go で開きます。" >> "$GITHUB_STEP_SUMMARY"
+          npx --yes eas-cli@27.4.1 update --channel main --message "$(git log -1 --pretty=%s)" --platform all --non-interactive --json > update.json
+          node -e '
+            const u = JSON.parse(require("fs").readFileSync("update.json", "utf8"));
+            const ios = u.find((x) => x.platform === "ios");
+            const pid = require("./app.json").expo.extra.eas.projectId;
+            const lines = [
+              "### iPhone（Expo Go）で開く",
+              "",
+              "- 常に最新版: `exp://u.expo.dev/" + pid + "?channel-name=main&runtime-version=" + ios.runtimeVersion + "`",
+              "- この更新だけ: `exp://u.expo.dev/update/" + ios.id + "`",
+              "",
+              "iPhone の Safari のアドレス欄に貼り付けて開くと Expo Go が起動します。",
+            ];
+            require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join("\n") + "\n");
+            console.log(lines.join("\n"));
+          '

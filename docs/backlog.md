@@ -6,7 +6,7 @@
 
 - [x] Expo土台、司会ロジック、会議室一覧・チャット・メンバー・設定の4画面、モックAI
 - [x] GitHub Actions: 型チェック・テスト・Web書き出し
-- [ ] EAS Update で iPhone の Expo Go から最新版を開けるようにする（要: オーナーの Expo アカウントと EXPO_TOKEN）
+- [x] EAS Update で iPhone の Expo Go から最新版を開けるようにする（#4 #5、URL修正は本PR）
 - [ ] 本物のAIで通し確認（要: OpenRouter のキー登録と少額の課金）
 - [x] 会議室の削除・名前変更、長押しで発言をコピー
 - [ ] 発言の途中表示（ストリーミング）で待ち時間を短く感じさせる
