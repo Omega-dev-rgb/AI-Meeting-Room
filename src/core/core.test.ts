@@ -167,3 +167,13 @@ describe('OpenRouter provider', () => {
     await expect(p.complete({ model: 'a', messages: [], maxTokens: 1 })).rejects.toThrow('HTTP 401 bad key');
   });
 });
+
+describe('MODEL_PRESETS', () => {
+  it('初期メンバーは全員「普段用」で、モデル変更で判定が変わる', async () => {
+    const { presetOf, MODEL_PRESETS } = await import('./defaultMembers');
+    for (const m of DEFAULT_MEMBERS) expect(presetOf(m)).toBe('casual');
+    const c = DEFAULT_MEMBERS[1];
+    expect(presetOf({ ...c, model: MODEL_PRESETS.claude.serious })).toBe('serious');
+    expect(presetOf({ ...c, model: 'foo/bar' })).toBe('custom');
+  });
+});

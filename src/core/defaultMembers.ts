@@ -49,3 +49,23 @@ export const VENDOR_LABEL: Record<Member['vendor'], string> = {
   gemini: 'Gemini',
   grok: 'Grok',
 };
+
+/**
+ * モデルの候補（OpenRouter表記）。普段用は安く速い、本気用は賢いが高い。
+ * 提供状況・料金は変わるので、本番接続時に openrouter.ai/models で確認して更新する。
+ */
+export const MODEL_PRESETS: Record<Member['vendor'], { casual: string; serious: string }> = {
+  chatgpt: { casual: 'openai/gpt-5-mini', serious: 'openai/gpt-5' },
+  claude: { casual: 'anthropic/claude-haiku-4.5', serious: 'anthropic/claude-sonnet-4.5' },
+  gemini: { casual: 'google/gemini-2.5-flash', serious: 'google/gemini-2.5-pro' },
+  grok: { casual: 'x-ai/grok-4-fast', serious: 'x-ai/grok-4' },
+};
+
+export type PresetKind = 'casual' | 'serious' | 'custom';
+
+export function presetOf(member: Member): PresetKind {
+  const p = MODEL_PRESETS[member.vendor];
+  if (member.model === p.casual) return 'casual';
+  if (member.model === p.serious) return 'serious';
+  return 'custom';
+}
