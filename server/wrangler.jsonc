@@ -1,0 +1,11 @@
+// 朝会サーバー（Cloudflare Workers 無料プラン）。デプロイは GitHub Actions が行う
+{
+  "name": "ai-meeting-room",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  // 毎朝 7:00（日本時間）＝ 前日 22:00（UTC）
+  "triggers": { "crons": ["0 22 * * *"] },
+  // 会話の材料と朝会の結果の保存先。初回デプロイで自動作成される
+  "kv_namespaces": [{ "binding": "MEETING" }],
+  "vars": { "BUDGET_JPY": "300" }
+}
