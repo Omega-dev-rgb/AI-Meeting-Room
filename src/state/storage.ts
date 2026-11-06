@@ -10,10 +10,13 @@ export type PersistedData = {
   rooms: Room[];
   messages: Message[];
   settings: Settings;
+  /** 朝会サーバーから最後に受け取った発言の時刻 */
+  morningSince?: string;
 };
 
 const DATA_KEY = 'ai-meeting-room/data';
 const API_KEY = 'openrouter_api_key';
+const MEETING_TOKEN = 'meeting_token';
 
 export async function loadData(): Promise<PersistedData | null> {
   const raw = await AsyncStorage.getItem(DATA_KEY);
@@ -46,4 +49,20 @@ export async function saveApiKey(key: string): Promise<void> {
   }
   if (key) await SecureStore.setItemAsync(API_KEY, key);
   else await SecureStore.deleteItemAsync(API_KEY);
+}
+
+/** 朝会サーバーの合言葉も Keychain に保存する */
+export async function loadMeetingToken(): Promise<string> {
+  if (Platform.OS === 'web') return (await AsyncStorage.getItem(MEETING_TOKEN)) ?? '';
+  return (await SecureStore.getItemAsync(MEETING_TOKEN)) ?? '';
+}
+
+export async function saveMeetingToken(token: string): Promise<void> {
+  if (Platform.OS === 'web') {
+    if (token) await AsyncStorage.setItem(MEETING_TOKEN, token);
+    else await AsyncStorage.removeItem(MEETING_TOKEN);
+    return;
+  }
+  if (token) await SecureStore.setItemAsync(MEETING_TOKEN, token);
+  else await SecureStore.deleteItemAsync(MEETING_TOKEN);
 }

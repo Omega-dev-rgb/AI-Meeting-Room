@@ -117,6 +117,7 @@ export async function runMorningMeeting(state: SyncState, pastMessages: Message[
     historyLimit: 20,
     warnRatio: 0.8,
     userProfile: state.userProfile,
+    morningUrl: '',
   };
   const topic = buildMorningTopic(state, at);
   const opening: Message = {

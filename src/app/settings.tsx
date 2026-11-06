@@ -13,7 +13,11 @@ const num = (s: string, fallback: number) => {
 
 export default function SettingsScreen() {
   const t = useTheme();
-  const { data, apiKey, setApiKey, updateSettings, spentThisMonth } = useApp();
+  const { data, apiKey, setApiKey, updateSettings, spentThisMonth, meetingToken, setMeetingToken, morningStatus, runMorningNow } =
+    useApp();
+  const [murl, setMurl] = useState(data.settings.morningUrl);
+  const [mtoken, setMtoken] = useState(meetingToken);
+  useEffect(() => setMtoken(meetingToken), [meetingToken]);
   const s = data.settings;
   const [key, setKey] = useState(apiKey);
   const [saved, setSaved] = useState(false);
@@ -100,6 +104,46 @@ export default function SettingsScreen() {
         onEndEditing={(e) => updateSettings({ historyLimit: Math.round(num(e.nativeEvent.text, s.historyLimit)) })}
         hint="古い話は「今どうなってる？」の要約で引き継がれます"
       />
+      <View style={{ gap: 4 }}>
+        <Text style={[styles.h, { color: t.text }]}>☀️ 朝会サーバー</Text>
+        <Text style={{ color: t.sub, fontSize: 12, lineHeight: 17 }}>
+          毎朝7時にサーバー上でメンバーが朝会を開き、「☀️ 朝会」ルームに届きます。サーバーの料金は月300円が上限です。
+        </Text>
+      </View>
+      <Field
+        label="サーバーのURL"
+        value={murl}
+        onChangeText={setMurl}
+        autoCapitalize="none"
+        autoCorrect={false}
+        keyboardType="url"
+        placeholder="https://ai-meeting-room.〇〇.workers.dev"
+      />
+      <Field
+        label="合言葉"
+        value={mtoken}
+        onChangeText={setMtoken}
+        secureTextEntry
+        autoCapitalize="none"
+        autoCorrect={false}
+        hint="GitHubに登録した MEETING_TOKEN と同じもの。Keychainにだけ保存されます"
+      />
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Pressable
+          onPress={async () => {
+            updateSettings({ morningUrl: murl.trim() });
+            await setMeetingToken(mtoken.trim());
+          }}
+          style={[styles.btn, { backgroundColor: t.accent, flex: 1 }]}
+        >
+          <Text style={styles.btnText}>保存して接続</Text>
+        </Pressable>
+        <Pressable onPress={runMorningNow} style={[styles.btn, { backgroundColor: t.warn, flex: 1 }]}>
+          <Text style={styles.btnText}>今すぐ朝会を開く</Text>
+        </Pressable>
+      </View>
+      {morningStatus ? <Text style={{ color: t.sub, fontSize: 13 }}>{morningStatus}</Text> : null}
+
       <Field
         label="わたしについて（全員に共有）"
         defaultValue={s.userProfile}

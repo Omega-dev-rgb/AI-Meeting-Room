@@ -70,3 +70,26 @@ describe('朝会サーバー', () => {
     expect(((await none.json()) as { messages: Message[] }).messages).toHaveLength(0);
   });
 });
+
+describe('アプリ側の朝会の取り込み', () => {
+  it('重複を除き、朝会ルームを作り、要約を引き継ぐ', async () => {
+    const { mergeMorning } = await import('../src/core/morningClient');
+    const incoming: Message[] = [
+      { id: 'a', roomId: MORNING_ROOM_ID, authorId: 'claude', kind: 'chat', text: 'おはよう', createdAt: '2026-11-06T22:00:01Z' },
+      { id: 'b', roomId: MORNING_ROOM_ID, authorId: 'chatgpt', kind: 'summary', text: '■ 次の一手', createdAt: '2026-11-06T22:00:02Z' },
+    ];
+    const base: Room[] = [{ id: 'lobby', title: '雑談', memberIds: [], createdAt: '' }];
+    const r1 = mergeMorning(base, [], incoming, DEFAULT_MEMBERS, 'now');
+    expect(r1.rooms[0]).toMatchObject({ id: MORNING_ROOM_ID, latestSummary: '■ 次の一手' });
+    expect(r1.messages).toHaveLength(2);
+    expect(r1.latest).toBe('2026-11-06T22:00:02Z');
+    const r2 = mergeMorning(r1.rooms, r1.messages, incoming, DEFAULT_MEMBERS, 'now');
+    expect(r2.messages).toHaveLength(2);
+    expect(r2.rooms).toHaveLength(2);
+  });
+  it('サーバーのエラー文をそのまま伝える', async () => {
+    const { createMorningClient } = await import('../src/core/morningClient');
+    const c = createMorningClient('https://x.workers.dev/', 't', async () => ({ ok: false, status: 401, json: async () => ({ error: '合言葉が違います' }) }));
+    await expect(c.runNow()).rejects.toThrow('合言葉が違います');
+  });
+});
