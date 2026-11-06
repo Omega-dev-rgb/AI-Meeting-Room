@@ -3,7 +3,7 @@ import { budgetStatus, monthKey, spentJpy, type BudgetStatus } from '../core/bud
 import { DEFAULT_MEMBERS, migrateMembers } from '../core/defaultMembers';
 import { runConversation, summarize } from '../core/orchestrator';
 import { createMockProvider, createOpenRouterProvider } from '../core/providers';
-import { DEFAULT_SETTINGS, type Member, type Message, type Room, type Settings } from '../core/types';
+import { DEFAULT_SETTINGS, type Member, type Message, type Room, type RoomDepth, type Settings } from '../core/types';
 import { loadApiKey, loadData, saveApiKey, saveData, type PersistedData } from './storage';
 
 const newId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -29,6 +29,7 @@ type AppState = {
   budget: BudgetStatus;
   createRoom(title: string, memberIds: string[]): string;
   renameRoom(id: string, title: string): void;
+  setRoomDepth(id: string, depth: RoomDepth): void;
   deleteRoom(id: string): void;
   updateMember(m: Member): void;
   resetMembers(): void;
@@ -161,6 +162,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     },
     renameRoom(id, title) {
       update((d) => ({ ...d, rooms: d.rooms.map((r) => (r.id === id ? { ...r, title } : r)) }));
+    },
+    setRoomDepth(id, depth) {
+      update((d) => ({ ...d, rooms: d.rooms.map((r) => (r.id === id ? { ...r, depth } : r)) }));
     },
     deleteRoom(id) {
       update((d) => ({ ...d, rooms: d.rooms.filter((r) => r.id !== id), messages: d.messages.filter((m) => m.roomId !== id) }));

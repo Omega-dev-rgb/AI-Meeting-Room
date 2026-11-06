@@ -102,7 +102,7 @@ export default function SettingsScreen() {
         defaultValue={s.userProfile}
         multiline
         onEndEditing={(e) => updateSettings({ userProfile: e.nativeEvent.text })}
-        placeholder="例：育休中に個人開発をしている。プログラミングは初心者"
+        placeholder="例：育休中（2027年3月まで）に個人開発。プログラミングは初心者。今はAI会議室アプリとパズルゲームを制作中。目標は副業で月1〜5万円"
       />
     </ScrollView>
   );

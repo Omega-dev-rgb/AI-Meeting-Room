@@ -62,7 +62,7 @@ export async function* runConversation(
     const messages = buildPrompt(me, deps.members, room, log, deps.settings);
     let msg: Message;
     try {
-      const res = await deps.provider.complete({ model: me.model, messages, maxTokens: 1500 }, deps.signal);
+      const res = await deps.provider.complete({ model: me.model, messages, maxTokens: room.depth === 'quick' ? 1000 : 2000 }, deps.signal);
       msg = {
         id: newId(),
         roomId: room.id,

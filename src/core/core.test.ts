@@ -218,3 +218,17 @@ describe('本物のAIでの確認で見つかった不具合（2026-11-06）', (
     expect(sys).toContain('自分の経験として語らない');
   });
 });
+
+describe('会話の深さ（じっくり／さくっと）', () => {
+  const base: Room = { id: 'r', title: 't', memberIds: DEFAULT_MEMBERS.map((m) => m.id), createdAt: '' };
+  it('初期値はじっくりで、理由や反対意見を求める', () => {
+    const sys = buildPrompt(DEFAULT_MEMBERS[1], DEFAULT_MEMBERS, base, [], DEFAULT_SETTINGS)[0].content;
+    expect(sys).toContain('3〜6文');
+    expect(sys).toContain('反対意見');
+  });
+  it('さくっとでは短く返す', () => {
+    const sys = buildPrompt(DEFAULT_MEMBERS[1], DEFAULT_MEMBERS, { ...base, depth: 'quick' }, [], DEFAULT_SETTINGS)[0].content;
+    expect(sys).toContain('2〜3文');
+    expect(sys).not.toContain('反対意見');
+  });
+});
