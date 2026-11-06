@@ -15,7 +15,10 @@ export default function NewRoomScreen() {
   const toggle = (id: string) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
 
   return (
-    <ScrollView style={{ backgroundColor: t.bg }} contentContainerStyle={{ padding: 16, gap: 16 }} keyboardShouldPersistTaps="handled">
+    <ScrollView style={{ backgroundColor: t.bg }} contentContainerStyle={{ padding: 16, gap: 16 }} keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+      keyboardDismissMode="interactive"
+    >
       <Field label="トピック" value={title} onChangeText={setTitle} placeholder="例：レシピカード v1.1 の仕様" autoFocus />
       <View style={{ gap: 8 }}>
         <Text style={{ color: t.text, fontWeight: '600' }}>参加メンバー</Text>

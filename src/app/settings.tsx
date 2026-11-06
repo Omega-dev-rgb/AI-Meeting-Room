@@ -35,7 +35,10 @@ export default function SettingsScreen() {
   );
 
   return (
-    <ScrollView style={{ backgroundColor: t.bg }} contentContainerStyle={{ padding: 16, gap: 18 }} keyboardShouldPersistTaps="handled">
+    <ScrollView style={{ backgroundColor: t.bg }} contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: 80 }} keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+      keyboardDismissMode="interactive"
+    >
       <View style={{ gap: 8 }}>
         <Text style={[styles.h, { color: t.text }]}>AIの接続</Text>
         {mode('mock', 'モック（無料）', 'APIキーなしで画面の動きを試せます。返事は決まった文です')}

@@ -22,7 +22,10 @@ export default function MemberEditScreen() {
   };
 
   return (
-    <ScrollView style={{ backgroundColor: t.bg }} contentContainerStyle={{ padding: 16, gap: 16 }} keyboardShouldPersistTaps="handled">
+    <ScrollView style={{ backgroundColor: t.bg }} contentContainerStyle={{ padding: 16, gap: 16 }} keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+      keyboardDismissMode="interactive"
+    >
       <Text style={{ color: t.sub }}>中身: {VENDOR_LABEL[member.vendor]}</Text>
       <Field label="名前" value={draft.name} onChangeText={set('name')} hint="会議室では「@名前」で指名できます" />
       <Field label="性格・話し方" value={draft.persona} onChangeText={set('persona')} multiline />
