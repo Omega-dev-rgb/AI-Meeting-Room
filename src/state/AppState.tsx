@@ -1,10 +1,21 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { AppState as RNAppState } from 'react-native';
+import { buildSyncState } from '../core/morning';
+import { createMorningClient, mergeMorning } from '../core/morningClient';
 import { budgetStatus, monthKey, spentJpy, type BudgetStatus } from '../core/budget';
 import { DEFAULT_MEMBERS, migrateMembers } from '../core/defaultMembers';
 import { runConversation, summarize } from '../core/orchestrator';
 import { createMockProvider, createOpenRouterProvider } from '../core/providers';
 import { DEFAULT_SETTINGS, type Member, type Message, type Room, type RoomDepth, type Settings } from '../core/types';
-import { loadApiKey, loadData, saveApiKey, saveData, type PersistedData } from './storage';
+import {
+  loadApiKey,
+  loadData,
+  loadMeetingToken,
+  saveApiKey,
+  saveData,
+  saveMeetingToken,
+  type PersistedData,
+} from './storage';
 
 const newId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -38,6 +49,12 @@ type AppState = {
   send(roomId: string, text: string): Promise<void>;
   askStatus(roomId: string): Promise<void>;
   stop(): void;
+  /** 朝会サーバー */
+  meetingToken: string;
+  setMeetingToken(token: string): Promise<void>;
+  morningStatus: string;
+  syncMorning(): Promise<void>;
+  runMorningNow(): Promise<void>;
 };
 
 const Ctx = createContext<AppState | null>(null);
@@ -47,13 +64,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<PersistedData>(initialData);
   const [apiKey, setApiKeyState] = useState('');
   const [busyRoomId, setBusy] = useState<string | null>(null);
+  const [meetingToken, setMeetingTokenState] = useState('');
+  const [morningStatus, setMorningStatus] = useState('');
   const dataRef = useRef(data);
   dataRef.current = data;
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     (async () => {
-      const [saved, key] = await Promise.all([loadData(), loadApiKey()]);
+      const [saved, key, mt] = await Promise.all([loadData(), loadApiKey(), loadMeetingToken()]);
+      setMeetingTokenState(mt);
       if (saved)
         setData({
           ...initialData(),
@@ -148,6 +168,55 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     [appendMessage, busyRoomId, provider, update],
   );
 
+  /** 材料を送り、届いている朝会を取り込む */
+  const syncMorning = useCallback(async () => {
+    const d = dataRef.current;
+    if (!d.settings.morningUrl.trim() || !meetingToken) return;
+    const client = createMorningClient(d.settings.morningUrl, meetingToken);
+    try {
+      const now = new Date();
+      await client.pushState(buildSyncState(d.members, d.rooms, d.messages, d.settings.userProfile, now));
+      const incoming = await client.fetchSince(d.morningSince ?? '');
+      update((x) => {
+        const merged = mergeMorning(x.rooms, x.messages, incoming, x.members, now.toISOString());
+        return { ...x, rooms: merged.rooms, messages: merged.messages, morningSince: merged.latest ?? x.morningSince };
+      });
+      setMorningStatus(`同期しました（${now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}）`);
+    } catch (e) {
+      setMorningStatus(`同期できませんでした: ${(e as Error).message}`);
+    }
+  }, [meetingToken, update]);
+
+  const runMorningNow = useCallback(async () => {
+    const d = dataRef.current;
+    if (!d.settings.morningUrl.trim() || !meetingToken) {
+      setMorningStatus('URLと合言葉を先に保存してください');
+      return;
+    }
+    setMorningStatus('朝会を開いています…（1分ほどかかります）');
+    try {
+      const client = createMorningClient(d.settings.morningUrl, meetingToken);
+      await client.pushState(buildSyncState(d.members, d.rooms, d.messages, d.settings.userProfile, new Date()));
+      await client.runNow();
+      await syncMorning();
+      setMorningStatus('朝会が終わりました。「☀️ 朝会」ルームを見てください');
+    } catch (e) {
+      setMorningStatus(`朝会を開けませんでした: ${(e as Error).message}`);
+    }
+  }, [meetingToken, syncMorning]);
+
+  // アプリに戻ってきたとき、起動時と会話が終わったとき（下の effect）に同期する
+  useEffect(() => {
+    if (!ready) return;
+    const sub = RNAppState.addEventListener('change', (s) => {
+      if (s === 'active') syncMorning();
+    });
+    return () => sub.remove();
+  }, [ready, syncMorning]);
+  useEffect(() => {
+    if (ready && busyRoomId === null) syncMorning();
+  }, [busyRoomId, ready, syncMorning, data.settings.morningUrl]);
+
   const value: AppState = {
     ready,
     data,
@@ -184,6 +253,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     },
     send,
     askStatus,
+    meetingToken,
+    async setMeetingToken(token) {
+      await saveMeetingToken(token);
+      setMeetingTokenState(token);
+    },
+    morningStatus,
+    syncMorning,
+    runMorningNow,
     stop() {
       abortRef.current?.abort();
     },

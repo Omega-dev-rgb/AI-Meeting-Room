@@ -1,0 +1,59 @@
+# 朝会サーバー（Cloudflare Workers）を配置する。main が更新され、server/ か src/core/ が変わったときに動く
+# 必要な Secrets: CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID / OPENROUTER_API_KEY / MEETING_TOKEN
+name: Server Deploy
+
+on:
+  push:
+    branches: [main]
+    paths: ['server/**', 'src/core/**', '.github/workflows/server-deploy.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: server-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      MEETING_TOKEN: ${{ secrets.MEETING_TOKEN }}
+    steps:
+      - name: Skip until secrets are registered
+        id: gate
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ] && [ -n "$OPENROUTER_API_KEY" ] && [ -n "$MEETING_TOKEN" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Secrets がそろっていないため配置をスキップ" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.ready == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.gate.outputs.ready == 'true'
+        run: npm ci
+      - name: Deploy worker
+        if: steps.gate.outputs.ready == 'true'
+        working-directory: server
+        shell: bash
+        run: npx --yes wrangler@4.158.0 deploy 2>&1 | tee deploy.log
+      - name: Set secrets
+        if: steps.gate.outputs.ready == 'true'
+        working-directory: server
+        run: |
+          printf '%s' "$OPENROUTER_API_KEY" | npx --yes wrangler@4.158.0 secret put OPENROUTER_API_KEY
+          printf '%s' "$MEETING_TOKEN" | npx --yes wrangler@4.158.0 secret put MEETING_TOKEN
+      - name: Show URL
+        if: steps.gate.outputs.ready == 'true'
+        working-directory: server
+        run: |
+          url=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -1)
+          echo "### 朝会サーバーのURL" >> "$GITHUB_STEP_SUMMARY"
+          echo "${url:-（見つかりませんでした。ログを確認してください）}" >> "$GITHUB_STEP_SUMMARY"
+          echo "アプリの設定 →「☀️ 朝会サーバー」に入れてください" >> "$GITHUB_STEP_SUMMARY"

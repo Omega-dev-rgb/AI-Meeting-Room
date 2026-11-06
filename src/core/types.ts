@@ -63,6 +63,8 @@ export type Settings = {
   warnRatio: number;
   /** 全員に共有する「わたしについて」メモ */
   userProfile: string;
+  /** 朝会サーバーのURL（空なら朝会は使わない） */
+  morningUrl: string;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -73,6 +75,7 @@ export const DEFAULT_SETTINGS: Settings = {
   historyLimit: 30,
   warnRatio: 0.8,
   userProfile: '',
+  morningUrl: '',
 };
 
 /** AIに送る1件分のメッセージ（OpenAI互換形式） */
