@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { budgetStatus, monthKey, spentJpy, type BudgetStatus } from '../core/budget';
-import { DEFAULT_MEMBERS } from '../core/defaultMembers';
+import { DEFAULT_MEMBERS, migrateMembers } from '../core/defaultMembers';
 import { runConversation, summarize } from '../core/orchestrator';
 import { createMockProvider, createOpenRouterProvider } from '../core/providers';
 import { DEFAULT_SETTINGS, type Member, type Message, type Room, type Settings } from '../core/types';
@@ -53,7 +53,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     (async () => {
       const [saved, key] = await Promise.all([loadData(), loadApiKey()]);
-      if (saved) setData({ ...initialData(), ...saved, settings: { ...DEFAULT_SETTINGS, ...saved.settings } });
+      if (saved)
+        setData({
+          ...initialData(),
+          ...saved,
+          members: migrateMembers(saved.members ?? DEFAULT_MEMBERS),
+          settings: { ...DEFAULT_SETTINGS, ...saved.settings },
+        });
       setApiKeyState(key);
       setReady(true);
     })();

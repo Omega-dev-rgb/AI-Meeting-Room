@@ -20,6 +20,8 @@ function systemPrompt(me: Member, others: Member[], room: Room, settings: Settin
     '- 自分の名前を発言の先頭に付けない',
     '- 他のメンバーの発言を踏まえ、同じことを繰り返さない。必要なら名前を呼んで反応する',
     '- わからないことは推測で断定しない',
+    '- あなたはAIのメンバーで、ユーザー本人ではない。【ユーザーについて】や会話に出たユーザーの状況（育休・仕事・家族など）を、自分の経験として語らない',
+    '- まとめ役以外のメンバーは、まとめや進行をしない。自分の担当の視点で意見を言う',
   ];
   if (settings.userProfile.trim()) lines.push(`【ユーザーについて】${settings.userProfile.trim()}`);
   if (me.memory.trim()) lines.push(`【あなたの記憶メモ】${me.memory.trim()}`);

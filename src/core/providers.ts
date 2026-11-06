@@ -21,6 +21,14 @@ type FetchLike = (url: string, init: { method: string; headers: Record<string, s
   text(): Promise<string>;
 }>;
 
+/**
+ * 考えてから答えるモデル（ChatGPT の gpt-5 系）は、考える段階で上限を使い切ると本文が空になる。
+ * それを防ぐため、考える量を少なめに指定する。Claude などに付けると逆に考える機能がオンになり高くつくので付けない
+ */
+export function reasoningOption(model: string): { reasoning?: { effort: 'low'; exclude: true } } {
+  return /^openai\/(gpt-5|o\d)/.test(model) ? { reasoning: { effort: 'low', exclude: true } } : {};
+}
+
 /** OpenRouter: 1つのAPIキーで Claude / ChatGPT / Gemini / Grok を呼べる中継サービス */
 export function createOpenRouterProvider(apiKey: string, fetchImpl: FetchLike = fetch as unknown as FetchLike): ChatProvider {
   return {
@@ -37,6 +45,7 @@ export function createOpenRouterProvider(apiKey: string, fetchImpl: FetchLike = 
           model: req.model,
           messages: req.messages,
           max_tokens: req.maxTokens,
+          ...reasoningOption(req.model),
           usage: { include: true },
         }),
         signal,
@@ -47,6 +56,10 @@ export function createOpenRouterProvider(apiKey: string, fetchImpl: FetchLike = 
       }
       const data = await res.json();
       const text: string = data?.choices?.[0]?.message?.content ?? '';
+      if (!text.trim()) {
+        const reason = data?.choices?.[0]?.finish_reason;
+        throw new Error(reason === 'length' ? '返事が長すぎて途中で切れ、本文が空でした' : '返事が空でした');
+      }
       const inputTokens: number =
         data?.usage?.prompt_tokens ?? estimateTokens(req.messages.map((m) => m.content).join(''));
       const outputTokens: number = data?.usage?.completion_tokens ?? estimateTokens(text);

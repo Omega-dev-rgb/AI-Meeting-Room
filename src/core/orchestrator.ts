@@ -62,7 +62,7 @@ export async function* runConversation(
     const messages = buildPrompt(me, deps.members, room, log, deps.settings);
     let msg: Message;
     try {
-      const res = await deps.provider.complete({ model: me.model, messages, maxTokens: 400 }, deps.signal);
+      const res = await deps.provider.complete({ model: me.model, messages, maxTokens: 1500 }, deps.signal);
       msg = {
         id: newId(),
         roomId: room.id,
@@ -95,7 +95,7 @@ export async function summarize(
   const inRoom = deps.members.filter((m) => room.memberIds.includes(m.id));
   const writer = inRoom.find((m) => m.id === summarizerId) ?? inRoom[0] ?? deps.members[0];
   const res = await deps.provider.complete(
-    { model: writer.model, messages: buildSummaryPrompt(deps.members, room, history, deps.settings), maxTokens: 600 },
+    { model: writer.model, messages: buildSummaryPrompt(deps.members, room, history, deps.settings), maxTokens: 2000 },
     deps.signal,
   );
   return {
