@@ -232,3 +232,27 @@ describe('会話の深さ（じっくり／さくっと）', () => {
     expect(sys).not.toContain('反対意見');
   });
 });
+
+describe('会話の共有', () => {
+  const room: Room = { id: 'r', title: '雑談', memberIds: ['claude'], createdAt: '' };
+  const msg = (id: string, authorId: string, kind: Message['kind'], text: string): Message => ({
+    id, roomId: 'r', authorId, kind, text, createdAt: '',
+  });
+  const msgs = [
+    msg('1', 'user', 'chat', 'やあ'),
+    msg('2', 'system', 'notice', '失敗しました'),
+    msg('3', 'claude', 'chat', 'こんにちは'),
+    msg('4', 'claude', 'summary', '■ 今の論点'),
+  ];
+  it('お知らせを除き、直近のユーザーの投稿とその返事を選ぶ', async () => {
+    const { defaultShareSelection } = await import('./share');
+    expect(defaultShareSelection(msgs)).toEqual(['1', '3', '4']);
+    expect(defaultShareSelection(msgs, 2)).toEqual(['1', '3']);
+    expect(defaultShareSelection(msgs.slice(1), 1)).toEqual(['4']);
+  });
+  it('テキスト版は選んだ発言だけを順番どおりに並べ、ハッシュタグを付ける', async () => {
+    const { shareText } = await import('./share');
+    const text = shareText(room, msgs, ['4', '1'], DEFAULT_MEMBERS);
+    expect(text).toBe('【雑談】\nあなた：やあ\nクロ（要約）：■ 今の論点\n\n#AI会議室');
+  });
+});
