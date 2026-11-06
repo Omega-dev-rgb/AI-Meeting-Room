@@ -23,6 +23,7 @@ export default function RootLayout() {
           <Stack.Screen name="members/index" options={{ title: 'メンバー' }} />
           <Stack.Screen name="members/[id]" options={{ title: 'メンバー編集' }} />
           <Stack.Screen name="settings" options={{ title: '設定' }} />
+          <Stack.Screen name="share/[id]" options={{ title: '共有' }} />
           <Stack.Screen name="new-room" options={{ title: '会議室を作る', presentation: 'modal' }} />
         </Stack>
       </AppStateProvider>
