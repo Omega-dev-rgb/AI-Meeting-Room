@@ -35,7 +35,10 @@ export default function SettingsScreen() {
   );
 
   return (
-    <ScrollView style={{ backgroundColor: t.bg }} contentContainerStyle={{ padding: 16, gap: 18 }} keyboardShouldPersistTaps="handled">
+    <ScrollView style={{ backgroundColor: t.bg }} contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: 80 }} keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+      keyboardDismissMode="interactive"
+    >
       <View style={{ gap: 8 }}>
         <Text style={[styles.h, { color: t.text }]}>AIの接続</Text>
         {mode('mock', 'モック（無料）', 'APIキーなしで画面の動きを試せます。返事は決まった文です')}
@@ -102,7 +105,7 @@ export default function SettingsScreen() {
         defaultValue={s.userProfile}
         multiline
         onEndEditing={(e) => updateSettings({ userProfile: e.nativeEvent.text })}
-        placeholder="例：育休中に個人開発をしている。プログラミングは初心者"
+        placeholder="例：育休中（2027年3月まで）に個人開発。プログラミングは初心者。今はAI会議室アプリとパズルゲームを制作中。目標は副業で月1〜5万円"
       />
     </ScrollView>
   );

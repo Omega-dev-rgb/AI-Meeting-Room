@@ -42,7 +42,11 @@ export type Room = {
   createdAt: string;
   /** 最新の「今どうなってる？」の結果 */
   latestSummary?: string;
+  /** 話し方。じっくり＝理由や具体例つきで長め（初期値）、さくっと＝短くテンポよく */
+  depth?: RoomDepth;
 };
+
+export type RoomDepth = 'deep' | 'quick';
 
 export type ProviderMode = 'mock' | 'openrouter';
 
