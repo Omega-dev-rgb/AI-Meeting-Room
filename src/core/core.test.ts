@@ -184,3 +184,37 @@ describe('MODEL_PRESETS', () => {
     expect(presetOf({ ...c, model: 'foo/bar' })).toBe('custom');
   });
 });
+
+describe('本物のAIでの確認で見つかった不具合（2026-11-06）', () => {
+  it('本文が空の返事はエラーにする（要約の吹き出しが空で止まらないように）', async () => {
+    const p = createOpenRouterProvider('k', async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ choices: [{ message: { content: '' }, finish_reason: 'length' }] }),
+      text: async () => '',
+    }));
+    await expect(p.complete({ model: 'openai/gpt-5-mini', messages: [], maxTokens: 10 })).rejects.toThrow('本文が空');
+  });
+  it('gpt-5 系だけ考える量を少なめに指定する', async () => {
+    const { reasoningOption } = await import('./providers');
+    expect(reasoningOption('openai/gpt-5-mini')).toEqual({ reasoning: { effort: 'low', exclude: true } });
+    expect(reasoningOption('anthropic/claude-haiku-4.5')).toEqual({});
+    expect(reasoningOption('x-ai/grok-4.3')).toEqual({});
+  });
+  it('提供終了の Grok モデルと古い役割文を読み込み時に置き換える', async () => {
+    const { migrateMembers } = await import('./defaultMembers');
+    const old = DEFAULT_MEMBERS.map((m) => ({ ...m }));
+    old[0].role = 'まとめ役。議論が散らかったら論点を整理し、次に何を決めるかを示す。';
+    old[3].model = 'x-ai/grok-4-fast';
+    old[1].role = '自分で書いた役割';
+    const m = migrateMembers(old);
+    expect(m[3].model).toBe('x-ai/grok-4.3');
+    expect(m[0].role).toBe(DEFAULT_MEMBERS[0].role);
+    expect(m[1].role).toBe('自分で書いた役割');
+  });
+  it('メンバーにユーザーの状況を自分のことにしないよう伝える', () => {
+    const room: Room = { id: 'r', title: 't', memberIds: DEFAULT_MEMBERS.map((m) => m.id), createdAt: '' };
+    const sys = buildPrompt(DEFAULT_MEMBERS[2], DEFAULT_MEMBERS, room, [], DEFAULT_SETTINGS)[0].content;
+    expect(sys).toContain('自分の経験として語らない');
+  });
+});
