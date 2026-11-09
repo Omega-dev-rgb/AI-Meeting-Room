@@ -42,18 +42,25 @@ jobs:
         if: steps.gate.outputs.ready == 'true'
         working-directory: server
         shell: bash
-        run: npx --yes wrangler@4.158.0 deploy 2>&1 | tee deploy.log
+        # URL にはアカウント名が入るので、公開ログには出さない（伏せ字にする）
+        run: |
+          npx --yes wrangler@4.158.0 deploy > deploy.log 2>&1 || { sed -E 's#https://[a-z0-9.-]+\.workers\.dev#https://***.workers.dev#g' deploy.log; exit 1; }
+          url=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -1)
+          echo "::add-mask::$url"
+          echo "url=$url" >> "$GITHUB_ENV"
+          sed -E 's#https://[a-z0-9.-]+\.workers\.dev#https://***.workers.dev#g' deploy.log
       - name: Set secrets
         if: steps.gate.outputs.ready == 'true'
         working-directory: server
         run: |
           printf '%s' "$OPENROUTER_API_KEY" | npx --yes wrangler@4.158.0 secret put OPENROUTER_API_KEY
           printf '%s' "$MEETING_TOKEN" | npx --yes wrangler@4.158.0 secret put MEETING_TOKEN
-      - name: Show URL
+      - name: Check server
         if: steps.gate.outputs.ready == 'true'
-        working-directory: server
         run: |
-          url=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -1)
-          echo "### 朝会サーバーのURL" >> "$GITHUB_STEP_SUMMARY"
-          echo "${url:-（見つかりませんでした。ログを確認してください）}" >> "$GITHUB_STEP_SUMMARY"
-          echo "アプリの設定 →「☀️ 朝会サーバー」に入れてください" >> "$GITHUB_STEP_SUMMARY"
+          sleep 5
+          curl -fsS "$url/health" > /dev/null
+          code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $MEETING_TOKEN" "$url/messages")
+          echo "合言葉つきの確認: HTTP $code"
+          test "$code" = "200"
+          echo "朝会サーバーは動いています（URLはCloudflareの Workers & Pages → ai-meeting-room で確認できます）" >> "$GITHUB_STEP_SUMMARY"
