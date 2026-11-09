@@ -14,12 +14,17 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MEETING_TOKEN: ${{ secrets.MEETING_TOKEN }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       SINCE: ${{ inputs.since }}
     steps:
       - name: Count morning messages
         run: |
-          url="https://ai-meeting-room.rakiaequlea.workers.dev"
-          echo "::add-mask::$url"
+          # URL にはアカウント名が入るので、リポジトリには書かず Cloudflare から取得して伏せ字にする
+          sub=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).result.subdomain))')
+          echo "::add-mask::$sub"
+          url="https://ai-meeting-room.$sub.workers.dev"
           body=$(curl -fsS -G -H "Authorization: Bearer $MEETING_TOKEN" --data-urlencode "since=$SINCE" "$url/messages")
           echo "$body" | node -e '
             let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
