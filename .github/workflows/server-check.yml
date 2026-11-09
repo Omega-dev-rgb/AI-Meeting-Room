@@ -1,0 +1,32 @@
+# 朝会サーバーが動いているかを確かめる（手動実行）。発言の中身は出さず、件数と最新の時刻だけを表示する
+name: Server Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      since:
+        description: 'この時刻（UTC, ISO形式）より後の発言を数える'
+        required: false
+        default: ''
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      MEETING_TOKEN: ${{ secrets.MEETING_TOKEN }}
+      SINCE: ${{ inputs.since }}
+    steps:
+      - name: Count morning messages
+        run: |
+          url="https://ai-meeting-room.rakiaequlea.workers.dev"
+          echo "::add-mask::$url"
+          body=$(curl -fsS -G -H "Authorization: Bearer $MEETING_TOKEN" --data-urlencode "since=$SINCE" "$url/messages")
+          echo "$body" | node -e '
+            let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+              const m=JSON.parse(s).messages||[];
+              const latest=m.reduce((a,x)=>x.createdAt>a?x.createdAt:a,"");
+              const kinds=m.reduce((a,x)=>(a[x.kind]=(a[x.kind]||0)+1,a),{});
+              const line=`発言 ${m.length}件 / 最新 ${latest||"なし"} / 内訳 ${JSON.stringify(kinds)}`;
+              console.log(line);
+              require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, line+"\n");
+            })'
