@@ -1,0 +1,37 @@
+# 朝会サーバーが動いているかを確かめる（手動実行）。発言の中身は出さず、件数と最新の時刻だけを表示する
+name: Server Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      since:
+        description: 'この時刻（UTC, ISO形式）より後の発言を数える'
+        required: false
+        default: ''
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      MEETING_TOKEN: ${{ secrets.MEETING_TOKEN }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      SINCE: ${{ inputs.since }}
+    steps:
+      - name: Count morning messages
+        run: |
+          # URL にはアカウント名が入るので、リポジトリには書かず Cloudflare から取得して伏せ字にする
+          sub=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).result.subdomain))')
+          echo "::add-mask::$sub"
+          url="https://ai-meeting-room.$sub.workers.dev"
+          body=$(curl -fsS -G -H "Authorization: Bearer $MEETING_TOKEN" --data-urlencode "since=$SINCE" "$url/messages")
+          echo "$body" | node -e '
+            let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+              const m=JSON.parse(s).messages||[];
+              const latest=m.reduce((a,x)=>x.createdAt>a?x.createdAt:a,"");
+              const kinds=m.reduce((a,x)=>(a[x.kind]=(a[x.kind]||0)+1,a),{});
+              const line=`発言 ${m.length}件 / 最新 ${latest||"なし"} / 内訳 ${JSON.stringify(kinds)}`;
+              console.log(line);
+              require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, line+"\n");
+            })'
